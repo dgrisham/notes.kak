@@ -224,6 +224,7 @@ map global notes-tasks-list i ":notes-tasks-list-by-regex %opt{notes_sym_idea}<r
 map global notes-tasks-list l ":notes-tasks-list-by-regex '\ :[^:]+:'<ret>"              -docstring 'list tasks by labels'
 map global notes-tasks-list n ":notes-tasks-list-by-regex %opt{notes_sym_wontdo}<ret>"   -docstring 'list wontdo tasks'
 map global notes-tasks-list q ":notes-tasks-list-by-regex %opt{notes_sym_question}<ret>" -docstring 'list questions'
+map global notes-tasks-list r ":notes-tasks-list-by-regex %opt{notes_sym_review}<ret>"   -docstring 'list reviews'
 map global notes-tasks-list t ":notes-tasks-list-by-regex %opt{notes_sym_todo}<ret>"     -docstring 'list todo tasks'
 map global notes-tasks-list w ":notes-tasks-list-by-regex %opt{notes_sym_wip}<ret>"      -docstring 'list wip tasks'
 
@@ -242,6 +243,7 @@ hook -group notes-tasks global WinCreate .*\.md %{
   map window notes-tasks n ":notes-task-switch-status %opt{notes_sym_wontdo}<ret>"   -docstring 'switch task to wontdo'
   map window notes-tasks q ":notes-task-switch-status %opt{notes_sym_question}<ret>" -docstring 'switch task to question'
   map window notes-tasks <ret> ":notes-task-gh-open-issue<ret>"                      -docstring 'open GitHub issue'
+  map window notes-tasks r ":notes-task-switch-status %opt{notes_sym_review}<ret>"   -docstring 'switch task to review'
   map window notes-tasks t ":notes-task-switch-status %opt{notes_sym_todo}<ret>"     -docstring 'switch task to todo'
   map window notes-tasks w ":notes-task-switch-status %opt{notes_sym_wip}<ret>"      -docstring 'switch task to wip'
 }

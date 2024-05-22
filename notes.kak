@@ -12,6 +12,7 @@ declare-option str notes_sym_wontdo 'WONTDO'
 declare-option str notes_sym_idea 'IDEA'
 declare-option str notes_sym_question 'QUESTION'
 declare-option str notes_sym_hold 'HOLD'
+declare-option str notes_sym_review 'REVIEW'
 declare-option str notes_find 'fd -t file .md'
 declare-option str notes_find_dir 'fd -t directory .'
 declare-option -hidden str notes_tasks_list_current_line
@@ -24,23 +25,22 @@ declare-user-mode notes-journal-nav
 declare-user-mode notes-journal-nav-last
 
 set-face global notes_todo green
-set-face global notes_wip magenta
+set-face global notes_wip blue
 set-face global notes_done black
-set-face global notes_done_text black
 set-face global notes_wontdo black
-set-face global notes_wontdo_text black+s
 set-face global notes_idea green
 set-face global notes_question cyan
-set-face global notes_hold magenta
-set-face global notes_issue cyan+u
+set-face global notes_hold red
+set-face global notes_review yellow
+
+set-face global notes_issue black+u
 set-face global notes_task_list_delimiter black
 set-face global notes_task_list_path blue
 set-face global notes_task_list_line white
 set-face global notes_task_list_col white
 set-face global notes_subtask_uncheck green
 set-face global notes_subtask_check black
-set-face global notes_subtask_text_check black
-set-face global notes_tag green
+set-face global notes_tag green+i
 
 define-command notes-journal-open -docstring 'open daily journal' %{
   nop %sh{
@@ -177,10 +177,11 @@ add-highlighter shared/notes-tasks/wontdo regex "(%opt{notes_sym_wontdo})"     1
 add-highlighter shared/notes-tasks/idea regex "(%opt{notes_sym_idea})"         1:notes_idea
 add-highlighter shared/notes-tasks/question regex "(%opt{notes_sym_question})" 1:notes_question
 add-highlighter shared/notes-tasks/hold regex "(%opt{notes_sym_hold})"         1:notes_hold
+add-highlighter shared/notes-tasks/review regex "(%opt{notes_sym_review})"     1:notes_review
 add-highlighter shared/notes-tasks/issue regex " (#[0-9]+)"                    1:notes_issue
 add-highlighter shared/notes-tasks/subtask-uncheck regex "-\s* (\[ \])[^\n]*"  1:notes_subtask_uncheck
 add-highlighter shared/notes-tasks/subtask-check regex "-\s* (\[x\])\s*([^\n]*)"\
-  1:notes_subtask_check 2:notes_subtask_text_check
+  1:notes_subtask_check
 add-highlighter shared/notes-tasks/tag regex " (:[^:]+:)" 0:notes_tag
 
 add-highlighter shared/notes-tasks-list group

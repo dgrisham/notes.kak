@@ -100,7 +100,7 @@ define-command notes-archive-open -docstring 'open archive' %{
 define-command notes-capture -docstring 'capture' %{
   prompt capture: %{
     nop %sh{
-      echo "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_capture_file"
+      echo -e "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_capture_file"
     }
   }
 }

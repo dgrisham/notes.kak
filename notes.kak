@@ -3,7 +3,6 @@
 # Global directory for notes.
 declare-option str notes_root_dir "%sh{ echo $HOME/notes }"
 
-
 # Active directory.
 #
 # Global directory (`notes_root_dir`) or a local override.
@@ -72,7 +71,7 @@ define-command notes-journal-open-rel -params -1 %{
 }
 
 define-command notes-open -docstring 'open note' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find '$kak_opt_notes_active_dir/$kak_opt_notes_dir'" 'open note:' %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/$kak_opt_notes_dir" 'open note:' %{
     edit %sh{
       echo "${kak_text%.md}.md"
     }
@@ -88,7 +87,7 @@ define-command notes-new-note -docstring 'new note' %{
 }
 
 define-command notes-archive-note -docstring 'archive note' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find '$kak_opt_notes_active_dir/$kak_opt_notes_dir'" archive: %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/$kak_opt_notes_dir" archive: %{
     nop %sh{
       mkdir -p "$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir"
       mv "$kak_text" "$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir/"
@@ -97,7 +96,7 @@ define-command notes-archive-note -docstring 'archive note' %{
 }
 
 define-command notes-archive-open -docstring 'open archive' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find '$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir'" 'open archive:' %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/$kak_opt_notes_archives_dir" 'open archive:' %{
     edit %sh{
       echo "${kak_text%.md}.md"
     }

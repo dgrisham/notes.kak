@@ -26,7 +26,7 @@ Commands are listed below, along with the user-mode and keybinding they are avai
 
 The plugin inserts two highlighters in the `shared` scope:
 
-- `kak-notes-tasks`, used to highlight tasks like `- TODO stuff` or `- WIP blabla`, as well subtask lists like
+- `kak-notes-tasks`, used to highlight tasks like `- TODO stuff` or `- WIP blabla`, as well as subtask lists like
   `- [ ] Do this` or `- [x] Done`.
 - `kak-notes-tasks-list`, used for the list view (similar to the `*grep*` buffer).
 

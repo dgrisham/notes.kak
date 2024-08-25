@@ -1,10 +1,18 @@
 # A simple plugin to add visual task management ot Markdown files.
 
-declare-option str notes_root_dir
-declare-option str notes_dir
-declare-option str notes_archives_dir
-declare-option str notes_journal_dir
-declare-option str notes_capture_file
+# Global directory for notes.
+declare-option str notes_root_dir "%sh{ echo $HOME/notes }"
+
+
+# Active directory.
+#
+# Global directory (`notes_root_dir`) or a local override.
+declare-option str notes_active_dir "%opt{notes_root_dir}"
+
+declare-option str notes_dir "notes"
+declare-option str notes_archives_dir "archives"
+declare-option str notes_journal_dir "journal"
+declare-option str notes_capture_file "capture.md"
 declare-option str notes_sym_todo 'TODO'
 declare-option str notes_sym_wip 'WIP'
 declare-option str notes_sym_done 'DONE'
@@ -14,7 +22,6 @@ declare-option str notes_sym_question 'QUESTION'
 declare-option str notes_sym_hold 'HOLD'
 declare-option str notes_sym_review 'REVIEW'
 declare-option str notes_find 'fd -t file .md'
-declare-option str notes_find_dir 'fd -t directory .'
 declare-option -hidden str notes_tasks_list_current_line
 declare-option -hidden str notes_journal_now
 
@@ -65,7 +72,7 @@ define-command notes-journal-open-rel -params -1 %{
 }
 
 define-command notes-open -docstring 'open note' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_dir" 'open note:' %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find '$kak_opt_notes_active_dir/$kak_opt_notes_dir'" 'open note:' %{
     edit %sh{
       echo "${kak_text%.md}.md"
     }
@@ -75,22 +82,22 @@ define-command notes-open -docstring 'open note' %{
 define-command notes-new-note -docstring 'new note' %{
   prompt note: %{
     edit %sh{
-      echo "$kak_opt_notes_dir/${kak_text%.md}.md"
+      echo "$kak_opt_notes_active_dir/$kak_opt_notes_dir/${kak_text%.md}.md"
     }
   }
 }
 
 define-command notes-archive-note -docstring 'archive note' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_dir" archive: %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find '$kak_opt_notes_active_dir/$kak_opt_notes_dir'" archive: %{
     nop %sh{
-      mkdir -p "$kak_opt_notes_archives_dir"
-      mv "$kak_text" "$kak_opt_notes_archives_dir/"
+      mkdir -p "$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir"
+      mv "$kak_text" "$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir/"
     }
   }
 }
 
 define-command notes-archive-open -docstring 'open archive' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_archives_dir" 'open archive:' %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find '$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir'" 'open archive:' %{
     edit %sh{
       echo "${kak_text%.md}.md"
     }
@@ -100,7 +107,7 @@ define-command notes-archive-open -docstring 'open archive' %{
 define-command notes-capture -docstring 'capture' %{
   prompt capture: %{
     nop %sh{
-      echo -e "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_capture_file"
+      echo -e "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_active_dir/$kak_opt_notes_capture_file"
     }
   }
 }
@@ -128,7 +135,7 @@ define-command notes-task-gh-open-issue -docstring 'open GitHub issue' %{
 define-command notes-tasks-list-by-regex -params 1 -docstring 'list tasks by status' %{
   edit -scratch *notes-tasks-list*
   unset-option buffer notes_tasks_list_current_line
-  execute-keys "%%d|rg -n --column -e '%arg{1}' %opt{notes_dir} %opt{notes_journal_dir} %opt{notes_capture_file}<ret>|sort<ret>gg"
+  execute-keys "%%d|rg -n --column -e '%arg{1}' '%sh{pwd}' '%opt{notes_active_dir}/%opt{notes_dir}' '%opt{notes_active_dir}/%opt{notes_journal_dir}' '%opt{notes_active_dir}/%opt{notes_capture_file}'<ret>|sort<ret>gg"
 }
 
 define-command notes-tasks-list-all -docstring 'list all tasks' %{
@@ -149,16 +156,17 @@ define-command notes-grepcmd -params 2 %{
 
 define-command notes-search -docstring 'search notes' %{
   prompt 'search notes:' %{
-    notes-grepcmd %opt{notes_root_dir} %val{text}
+    notes-grepcmd "%opt{notes_active_dir}" "%val{text}"
   }
 }
 
+# Synchronize notes remotely.
 define-command notes-sync -docstring 'synchronize notes' %{
   # First, we always check-in new modifications; then, we check whether we have anything else to send
   info -title 'notes' 'starting synchronizing…'
 
   nop %sh{
-    cd $kak_opt_notes_root_dir
+    cd $kak_opt_notes_active_dir
     git fetch --prune origin
     git rebase --autostash origin/master
     git add -A .
@@ -167,6 +175,20 @@ define-command notes-sync -docstring 'synchronize notes' %{
   }
 
   info -title 'notes' 'finished synchronizing'
+}
+
+# Toggle overriding the active directory with pwd and vice versa.
+define-command notes-override-active-dir -docstring 'override the active directory with PWD' %{
+  set-option global notes_active_dir %sh{
+    dir=$(pwd)
+    if [ "$kak_opt_notes_active_dir" == "$dir" ]; then
+      echo "$kak_opt_notes_root_dir"
+    else
+      echo "$dir"
+    fi
+  }
+
+  info -title notes "active dir: %opt{notes_active_dir}"
 }
 
 add-highlighter shared/notes-tasks group
@@ -200,6 +222,7 @@ map global notes n ':notes-open<ret>'                        -docstring 'open no
 map global notes / ':notes-search<ret>'                      -docstring 'search in notes'
 map global notes S ':notes-sync<ret>'                        -docstring 'synchronize notes'
 map global notes t ':enter-user-mode notes-tasks<ret>'       -docstring 'tasks'
+map global notes z ':notes-override-active-dir<ret>'         -docstring 'switch notes dir with PWD'
 
 map global notes-journal-nav l ':enter-user-mode notes-journal-nav-last<ret>' -docstring 'last…'
 map global notes-journal-nav d ':notes-journal-open-rel "-1 day"<ret>'        -docstring 'day before'

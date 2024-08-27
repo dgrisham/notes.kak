@@ -134,7 +134,7 @@ define-command notes-task-gh-open-issue -docstring 'open GitHub issue' %{
 define-command notes-tasks-list-by-regex -params 1 -docstring 'list tasks by status' %{
   edit -scratch *notes-tasks-list*
   unset-option buffer notes_tasks_list_current_line
-  execute-keys "%%d|rg -n --column -e '%arg{1}' '%sh{pwd}' '%opt{notes_active_dir}/%opt{notes_dir}' '%opt{notes_active_dir}/%opt{notes_journal_dir}' '%opt{notes_active_dir}/%opt{notes_capture_file}'<ret>|sort<ret>gg"
+  execute-keys "%%d|rg -n --column -e '%arg{1}' '%opt{notes_active_dir}/%opt{notes_dir}' '%opt{notes_active_dir}/%opt{notes_journal_dir}' '%opt{notes_active_dir}/%opt{notes_capture_file}'<ret>|sort<ret>gg"
 }
 
 define-command notes-tasks-list-all -docstring 'list all tasks' %{

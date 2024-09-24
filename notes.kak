@@ -112,7 +112,7 @@ define-command notes-capture -docstring 'capture' %{
 }
 
 define-command notes-open-capture -docstring 'open capture' %{
-  edit %opt{notes_capture_file}
+  edit "%opt{notes_active_dir}/%opt{notes_capture_file}"
 }
 
 define-command notes-task-switch-status -params 1 -docstring 'switch task' %{

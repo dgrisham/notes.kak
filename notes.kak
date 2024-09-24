@@ -50,22 +50,22 @@ set-face global notes_tag green+i
 
 define-command notes-journal-open -docstring 'open daily journal' %{
   nop %sh{
-    mkdir -p "$kak_opt_notes_journal_dir/$(date +%Y/%b)"
+    mkdir -p "$kak_opt_active_dir/$kak_opt_notes_journal_dir/$(date +%Y/%b)"
   }
 
 	evaluate-commands %{
-    edit "%opt{notes_journal_dir}/%sh{ date '+%Y/%b/%a %d' }.md"
+    edit "%opt{notes_active_dir}/%opt{notes_journal_dir}/%sh{ date '+%Y/%b/%a %d' }.md"
     set-option buffer notes_journal_now %sh{ date }
 	}
 }
 
 define-command notes-journal-open-rel -params -1 %{
   nop %sh{
-    mkdir -p "$kak_opt_notes_journal_dir/$(date -d ""$kak_opt_notes_journal_now $1"" +%Y/%b)"
+    mkdir -p "$kak_opt_notes_active_dire/$kak_opt_notes_journal_dir/$(date -d ""$kak_opt_notes_journal_now $1"" +%Y/%b)"
   }
 
 	evaluate-commands %{
-    edit -existing "%opt{notes_journal_dir}/%sh{ date -d ""$kak_opt_notes_journal_now $1"" ""+%Y/%b/%a %d"" }.md"
+    edit -existing "%opt{notes_active_dir}/%opt{notes_journal_dir}/%sh{ date -d ""$kak_opt_notes_journal_now $1"" ""+%Y/%b/%a %d"" }.md"
     set-option buffer notes_journal_now %sh{ date -d """$kak_opt_notes_journal_now $1""" }
 	}
 }

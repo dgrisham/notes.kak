@@ -1,5 +1,3 @@
-# A simple plugin to add visual task management ot Markdown files.
-
 # Global directory for notes.
 declare-option str notes_root_dir "%sh{ echo $HOME/notes }"
 
@@ -8,10 +6,6 @@ declare-option str notes_root_dir "%sh{ echo $HOME/notes }"
 # Global directory (`notes_root_dir`) or a local override.
 declare-option str notes_active_dir "%opt{notes_root_dir}"
 
-declare-option str notes_dir "notes"
-declare-option str notes_archives_dir "archives"
-declare-option str notes_journal_dir "journal"
-declare-option str notes_capture_file "capture.md"
 declare-option str notes_sym_todo 'TODO'
 declare-option str notes_sym_wip 'WIP'
 declare-option str notes_sym_done 'DONE'
@@ -24,10 +18,19 @@ declare-option str notes_find 'fd -t file .md'
 declare-option -hidden str notes_tasks_list_current_line
 declare-option -hidden str notes_journal_now
 
+# Main notes mode.
 declare-user-mode notes
+
+# Mode to edit tasks.
 declare-user-mode notes-tasks
+
+# Mode to list tasks.
 declare-user-mode notes-tasks-list
+
+# Mode to navigate journal.
 declare-user-mode notes-journal-nav
+
+# Mode to navigate journal (last journals).
 declare-user-mode notes-journal-nav-last
 
 set-face global notes_todo green
@@ -39,86 +42,92 @@ set-face global notes_question cyan
 set-face global notes_hold red
 set-face global notes_review yellow
 
-set-face global notes_issue black+u
-set-face global notes_task_list_delimiter black
-set-face global notes_task_list_path blue
-set-face global notes_task_list_line white
-set-face global notes_task_list_col white
+set-face global notes_issue cyan+u
 set-face global notes_subtask_uncheck green
 set-face global notes_subtask_check black
-set-face global notes_tag green+i
+set-face global notes_tag blue+i
 
+# Open the daily journal.
 define-command notes-journal-open -docstring 'open daily journal' %{
   nop %sh{
-    mkdir -p "$kak_opt_active_dir/$kak_opt_notes_journal_dir/$(date +%Y/%b)"
+    mkdir -p "$kak_opt_active_dir/journal/$(date +%Y/%b)"
   }
 
 	evaluate-commands %{
-    edit "%opt{notes_active_dir}/%opt{notes_journal_dir}/%sh{ date '+%Y/%b/%a %d' }.md"
+    edit "%opt{notes_active_dir}/journal/%sh{ date '+%Y/%b/%a %d' }.md"
     set-option buffer notes_journal_now %sh{ date }
 	}
 }
 
-define-command notes-journal-open-rel -params -1 %{
+# Open a journal relative to today.
+define-command -hidden notes-journal-open-rel -params -1 %{
   nop %sh{
-    mkdir -p "$kak_opt_notes_active_dire/$kak_opt_notes_journal_dir/$(date -d ""$kak_opt_notes_journal_now $1"" +%Y/%b)"
+    mkdir -p "$kak_opt_notes_active_dir/journal/$(date -d ""$kak_opt_notes_journal_now $1"" +%Y/%b)"
   }
 
 	evaluate-commands %{
-    edit -existing "%opt{notes_active_dir}/%opt{notes_journal_dir}/%sh{ date -d ""$kak_opt_notes_journal_now $1"" ""+%Y/%b/%a %d"" }.md"
+    edit -existing "%opt{notes_active_dir}/journal/%sh{ date -d ""$kak_opt_notes_journal_now $1"" ""+%Y/%b/%a %d"" }.md"
     set-option buffer notes_journal_now %sh{ date -d """$kak_opt_notes_journal_now $1""" }
 	}
 }
 
+# Open a note by prompting the user with a menu.
 define-command notes-open -docstring 'open note' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/$kak_opt_notes_dir" 'open note:' %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/notes" 'open note:' %{
     edit %sh{
       echo "${kak_text%.md}.md"
     }
   }
 }
 
+# Create a new note by prompting the user for its text.
 define-command notes-new-note -docstring 'new note' %{
   prompt note: %{
     edit %sh{
-      echo "$kak_opt_notes_active_dir/$kak_opt_notes_dir/${kak_text%.md}.md"
+      echo "$kak_opt_notes_active_dir/notes/${kak_text%.md}.md"
     }
   }
 }
 
+# Archive a note by prompting the user for which note to operate on.
 define-command notes-archive-note -docstring 'archive note' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/$kak_opt_notes_dir" archive: %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/notes" archive: %{
     nop %sh{
-      mkdir -p "$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir"
-      mv "$kak_text" "$kak_opt_notes_active_dir/$kak_opt_notes_archives_dir/"
+      mkdir -p "$kak_opt_notes_active_dir/archives"
+      mv "$kak_text" "$kak_opt_notes_active_dir/archives/"
     }
   }
 }
 
+# Prompt the user to pick and open an archived note.
 define-command notes-archive-open -docstring 'open archive' %{
-  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/$kak_opt_notes_archives_dir" 'open archive:' %{
+  prompt -menu -shell-script-candidates "$kak_opt_notes_find $kak_opt_notes_active_dir/archives" 'open archive:' %{
     edit %sh{
       echo "${kak_text%.md}.md"
     }
   }
 }
 
+# Capture a new note.
 define-command notes-capture -docstring 'capture' %{
   prompt capture: %{
     nop %sh{
-      echo -e "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_active_dir/$kak_opt_notes_capture_file"
+      echo -e "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_active_dir/capture.md"
     }
   }
 }
 
+# Open the capture file.
 define-command notes-open-capture -docstring 'open capture' %{
-  edit "%opt{notes_active_dir}/%opt{notes_capture_file}"
+  edit "%opt{notes_active_dir}/capture.md"
 }
 
+# Switch the status of a note to the input parameter.
 define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
   execute-keys -draft "gif<space>e_c%arg{1}"
 }
 
+# Open a GitHub issue. This requires a specific formatting of the file.
 define-command notes-task-gh-open-issue -docstring 'open GitHub issue' %{
   evaluate-commands -save-regs 'il' %{
     try %{
@@ -131,12 +140,13 @@ define-command notes-task-gh-open-issue -docstring 'open GitHub issue' %{
   }
 }
 
-define-command notes-tasks-list-by-regex -params 1 -docstring 'list tasks by status' %{
+define-command -hidden notes-tasks-list-by-regex -params 1 -docstring 'list tasks by status' %{
   edit -scratch *notes-tasks-list*
   unset-option buffer notes_tasks_list_current_line
-  execute-keys "%%d|rg -n --column -e '%arg{1}' '%opt{notes_active_dir}/%opt{notes_dir}' '%opt{notes_active_dir}/%opt{notes_journal_dir}' '%opt{notes_active_dir}/%opt{notes_capture_file}'<ret>|sort<ret>gg"
+  execute-keys "%%d|rg -n --column -e '%arg{1}' '%opt{notes_active_dir}/notes' '%opt{notes_active_dir}/journal' '%opt{notes_active_dir}/capture.md'<ret>|sort<ret>gg"
 }
 
+# List all tasks.
 define-command notes-tasks-list-all -docstring 'list all tasks' %{
   notes-tasks-list-by-regex "%opt{notes_sym_todo}\|%opt{notes_sym_wip}\|%opt{notes_sym_done}\|%opt{notes_sym_wontdo}\|%opt{notes_sym_idea}\|%opt{notes_sym_question}\|opt{notes_sym_hold}"
 }
@@ -148,11 +158,13 @@ define-command -hidden notes-tasks-list-open %{
 }
 
 # Run a grepper with the provided arguments as search query.
-define-command notes-grepcmd -params 2 %{
+define-command -hidden notes-grepcmd -params 2 %{
   # Initial implementation based on rg <pattern> <path>.
   execute-keys ":grep %arg{2} %arg{1}<ret>"
 }
 
+# Prompt the user for terms to search in notes, journals, archives and the
+# capture file.
 define-command notes-search -docstring 'search notes' %{
   prompt 'search notes:' %{
     notes-grepcmd "%opt{notes_active_dir}" "%val{text}"
@@ -206,7 +218,7 @@ add-highlighter shared/notes-tasks/subtask-check regex "-\s* (\[x\])\s*([^\n]*)"
 add-highlighter shared/notes-tasks/tag regex " (:[^:]+:)" 0:notes_tag
 
 add-highlighter shared/notes-tasks-list group
-add-highlighter shared/notes-tasks-list/path regex "^((?:\w:)?[^:\n]+):(\d+):(\d+)?" 1:cyan 2:green 3:green
+add-highlighter shared/notes-tasks-list/path regex "^((?:\w:)?[^:\n]+):(\d+):(\d+)?" 1:green 2:blue 3:blue
 add-highlighter shared/notes-tasks-list/current-line line %{%opt{notes_tasks_list_current_line}} default+b
 
 map global notes A ':notes-archive-note<ret>'                -docstring 'archive note'

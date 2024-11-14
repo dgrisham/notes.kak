@@ -215,7 +215,6 @@ add-highlighter shared/notes-tasks/issue regex " (#[0-9]+)"                    1
 add-highlighter shared/notes-tasks/subtask-uncheck regex "-\s* (\[ \])[^\n]*"  1:notes_subtask_uncheck
 add-highlighter shared/notes-tasks/subtask-check regex "-\s* (\[x\])\s*([^\n]*)"\
   1:notes_subtask_check
-add-highlighter shared/notes-tasks/tag regex " (:[^:]+:)" 0:notes_tag
 
 add-highlighter shared/notes-tasks-list group
 add-highlighter shared/notes-tasks-list/path regex "^((?:\w:)?[^:\n]+):(\d+):(\d+)?" 1:green 2:blue 3:blue

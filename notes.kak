@@ -50,7 +50,7 @@ set-face global notes_tag blue+i
 # Open the daily journal.
 define-command notes-journal-open -docstring 'open daily journal' %{
   nop %sh{
-    mkdir -p "$kak_opt_active_dir/journal/$(date +%Y/%b)"
+    mkdir -p "$kak_opt_notes_active_dir/journal/$(date +%Y/%b)"
   }
 
 	evaluate-commands %{

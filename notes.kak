@@ -148,7 +148,7 @@ define-command -hidden notes-tasks-list-by-regex -params 1 -docstring 'list task
 
 # List all tasks.
 define-command notes-tasks-list-all -docstring 'list all tasks' %{
-  notes-tasks-list-by-regex "%opt{notes_sym_todo}\|%opt{notes_sym_wip}\|%opt{notes_sym_done}\|%opt{notes_sym_wontdo}\|%opt{notes_sym_idea}\|%opt{notes_sym_question}\|opt{notes_sym_hold}"
+  notes-tasks-list-by-regex "%opt{notes_sym_todo}|%opt{notes_sym_wip}|%opt{notes_sym_done}|%opt{notes_sym_wontdo}|%opt{notes_sym_idea}|%opt{notes_sym_question}|%opt{notes_sym_hold}"
 }
 
 # Command executed when pressing <ret> in a *notes-tasks-list* buffer.

@@ -1,5 +1,11 @@
 # Global directory for notes.
-declare-option str notes_root_dir "%sh{ echo $HOME/notes }"
+# declare-option str notes_root_dir "%sh{ echo $HOME/notes }"
+declare-option str notes_root_dir %sh{
+    dir=${NOTES_DIR:-$SCRATCH/notes}
+    mkdir -p $dir
+    echo $dir
+}
+
 
 # Active directory.
 #
@@ -33,10 +39,12 @@ declare-user-mode notes-journal-nav
 # Mode to navigate journal (last journals).
 declare-user-mode notes-journal-nav-last
 
+declare-user-mode notes-open-link
+
 set-face global notes_todo green
 set-face global notes_wip blue
-set-face global notes_done black
-set-face global notes_wontdo black
+set-face global notes_done rgb:ffffff
+set-face global notes_wontdo red
 set-face global notes_idea green
 set-face global notes_question cyan
 set-face global notes_hold red
@@ -44,31 +52,24 @@ set-face global notes_review yellow
 
 set-face global notes_issue cyan+u
 set-face global notes_subtask_uncheck green
-set-face global notes_subtask_check black
+set-face global notes_subtask_check rgb:ffffff
+set-face global notes_subtask_check_partial yellow
 set-face global notes_tag blue+i
 
 # Open the daily journal.
 define-command notes-journal-open -docstring 'open daily journal' %{
-  nop %sh{
-    mkdir -p "$kak_opt_notes_active_dir/journal/$(date +%Y/%b)"
-  }
-
-	evaluate-commands %{
-    edit "%opt{notes_active_dir}/journal/%sh{ date '+%Y/%b/%a %d' }.md"
+  evaluate-commands %{
+    edit "%opt{notes_active_dir}/journal/%sh{ date '+%Y-%m-%d' }.md"
     set-option buffer notes_journal_now %sh{ date }
-	}
+  }
 }
 
 # Open a journal relative to today.
 define-command -hidden notes-journal-open-rel -params -1 %{
-  nop %sh{
-    mkdir -p "$kak_opt_notes_active_dir/journal/$(date -d ""$kak_opt_notes_journal_now $1"" +%Y/%b)"
-  }
-
-	evaluate-commands %{
-    edit -existing "%opt{notes_active_dir}/journal/%sh{ date -d ""$kak_opt_notes_journal_now $1"" ""+%Y/%b/%a %d"" }.md"
+  evaluate-commands %{
+    edit -existing "%opt{notes_active_dir}/journal/%sh{ date -d ""$kak_opt_notes_journal_now $1"" ""+%Y-%m-%d"" }.md"
     set-option buffer notes_journal_now %sh{ date -d """$kak_opt_notes_journal_now $1""" }
-	}
+  }
 }
 
 # Open a note by prompting the user with a menu.
@@ -108,42 +109,85 @@ define-command notes-archive-open -docstring 'open archive' %{
   }
 }
 
+# Capture a new note for the current git branch.
+define-command notes-branch-capture -docstring 'capture note for current git branch' %{
+  prompt capture: %{
+    nop %sh{
+      dir="$kak_opt_notes_active_dir/$(git branch --show-current 2>/dev/null)"
+      mkdir -p $dir
+      echo "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$dir/notes.md"
+    }
+  }
+}
+
+# Open the capture file for current git branch.
+define-command notes-branch-open -docstring 'open notes for current git branch' %{
+  edit %sh{
+    dir="$kak_opt_notes_active_dir/$(git branch --show-current 2>/dev/null)"
+    mkdir -p $dir
+    echo "$dir/notes.md"
+  }
+}
+
 # Capture a new note.
 define-command notes-capture -docstring 'capture' %{
   prompt capture: %{
     nop %sh{
-      echo -e "> $(date '+%a %b %d %Y, %H:%M:%S')\n$kak_text\n" >> "$kak_opt_notes_active_dir/capture.md"
+      echo "> $(date '+%a %b %d %Y, %H:%M')\n$kak_text\n" >> "$kak_opt_notes_active_dir/notes.md"
     }
   }
 }
 
 # Open the capture file.
 define-command notes-open-capture -docstring 'open capture' %{
-  edit "%opt{notes_active_dir}/capture.md"
+  edit "%opt{notes_active_dir}/notes.md"
 }
 
 # Switch the status of a note to the input parameter.
+# define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
+#   execute-keys -draft "git:c%arg{1}"
+# }
 define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
-  execute-keys -draft "gif<space>e_c%arg{1}"
+  execute-keys -draft "<a-i>p<a-;>jwc%arg{1}"
 }
 
-# Open a GitHub issue. This requires a specific formatting of the file.
-define-command notes-task-gh-open-issue -docstring 'open GitHub issue' %{
-  evaluate-commands -save-regs 'il' %{
-    try %{
-      execute-keys -draft '<a-i>w"iy'
-      execute-keys -draft '%sgithub_project: <ret>;<a-W>_"ly'
-      nop %sh{
-        open "https://github.com/$kak_reg_l/issues/$kak_reg_i"
-      }
+# View links
+define-command -hidden notes-task-open-link -params 1 -docstring 'open link' %{
+  evaluate-commands -save-regs 'i' %{
+    execute-keys -draft '<a-i><a-w>"iy'
+    evaluate-commands %sh{
+        tmux_cmd=$1
+        # match #<num> for GH pr
+        # [[ "$kak_reg_i" =~ ^#[0-9]+$ ]] && printf "tmux-terminal-window zsh -c 'gh pr view ${kak_reg_i:1}; zsh'"
+        [[ "$kak_reg_i" =~ ^#[0-9]+$ ]] && printf "$tmux_cmd zsh -c 'gh pr view ${kak_reg_i:1}; zsh'"
+        # match AAAA-NNNN for jira issue (A = alphanumeric, N = numeric)
+        [[ "$kak_reg_i" =~ ^[A-Z0-9]{2,4}-[0-9]+$ ]] && printf "$tmux_cmd zsh -c 'source ~/.config/zsh/.zshrc; jira issue view --comments 5 $kak_reg_i; zsh'"
     }
   }
 }
 
+define-command -hidden notes-link-tmux-vertical %{
+    notes-task-open-link tmux-terminal-vertical
+}
+define-command -hidden notes-link-tmux-horizontal %{
+    notes-task-open-link tmux-terminal-horizontal
+}
+define-command -hidden notes-link-tmux-window %{
+    notes-task-open-link tmux-terminal-window
+}
+
+# define-command -hidden notes-tasks-open-link-tmux -params 2 %{
+#   edit -scratch *notes-tasks-list*
+#   unset-option buffer notes_tasks_list_current_line
+#   # execute-keys "%%d|ag --filename --numbers --column '%arg{1}' '%opt{notes_active_dir}/'<ret>|sort<ret>gg"
+#   execute-keys "%%d|cd '%opt{notes_active_dir}/'; rg -n -e '%arg{1}' .<ret>|perl -pe 's|(.*?)/notes.md|\1|' | sort<ret>gg"
+# }
+
 define-command -hidden notes-tasks-list-by-regex -params 1 -docstring 'list tasks by status' %{
   edit -scratch *notes-tasks-list*
   unset-option buffer notes_tasks_list_current_line
-  execute-keys "%%d|rg -n --column -e '%arg{1}' '%opt{notes_active_dir}/notes' '%opt{notes_active_dir}/journal' '%opt{notes_active_dir}/capture.md'<ret>|sort<ret>gg"
+  # execute-keys "%%d|ag --filename --numbers --column '%arg{1}' '%opt{notes_active_dir}/'<ret>|sort<ret>gg"
+  execute-keys "%%d|cd '%opt{notes_active_dir}/'; rg -n -e '%arg{1}' .<ret>|perl -pe 's|(.*?)/notes.md|\1|' | sort<ret>gg"
 }
 
 # List all tasks.
@@ -154,7 +198,7 @@ define-command notes-tasks-list-all -docstring 'list all tasks' %{
 # Command executed when pressing <ret> in a *notes-tasks-list* buffer.
 define-command -hidden notes-tasks-list-open %{
   set-option buffer notes_tasks_list_current_line %val{cursor_line}
-  execute-keys -with-hooks -save-regs 'flc' 'giT:"fyllT:"lyllT:"cy:edit "%reg{f}" %reg{l} %reg{c}<ret>'
+  execute-keys -with-hooks -save-regs 'flc' 'giT:"fyllT:"ly:edit "%opt{notes_active_dir}/%reg{f}/notes.md" %reg{l}<ret>'
 }
 
 # Run a grepper with the provided arguments as search query.
@@ -215,20 +259,24 @@ add-highlighter shared/notes-tasks/issue regex " (#[0-9]+)"                    1
 add-highlighter shared/notes-tasks/subtask-uncheck regex "-\s* (\[ \])[^\n]*"  1:notes_subtask_uncheck
 add-highlighter shared/notes-tasks/subtask-check regex "-\s* (\[x\])\s*([^\n]*)"\
   1:notes_subtask_check
+add-highlighter shared/notes-tasks/subtask-check-partial regex "-\s* (\[/\])\s*([^\n]*)"\
+  1:notes_subtask_check_partial
 
 add-highlighter shared/notes-tasks-list group
 add-highlighter shared/notes-tasks-list/path regex "^((?:\w:)?[^:\n]+):(\d+):(\d+)?" 1:green 2:blue 3:blue
 add-highlighter shared/notes-tasks-list/current-line line %{%opt{notes_tasks_list_current_line}} default+b
 
-map global notes A ':notes-archive-note<ret>'                -docstring 'archive note'
-map global notes a ':notes-archive-open<ret>'                -docstring 'open archived note'
-map global notes C ':notes-capture<ret>'                     -docstring 'capture'
-map global notes c ':notes-open-capture<ret>'                -docstring 'open capture'
-map global notes j ':notes-journal-open<ret>'                -docstring 'open journal'
-map global notes J ':enter-user-mode notes-journal-nav<ret>' -docstring 'navigate journals'
+map global notes a ':notes-archive-note<ret>'                -docstring 'archive note'
+map global notes A ':notes-archive-open<ret>'                -docstring 'open archived note'
+map global notes b ':notes-branch-capture<ret>'              -docstring 'capture note for current git branch'
+map global notes B ':notes-branch-open<ret>'                 -docstring 'open notes for current git branch'
+map global notes c ':notes-capture<ret>'                     -docstring 'capture'
+map global notes C ':notes-open-capture<ret>'                -docstring 'open capture'
+map global notes J ':notes-journal-open<ret>'                -docstring 'open journal'
+map global notes j ':enter-user-mode notes-journal-nav<ret>' -docstring 'navigate journals'
 map global notes l ':enter-user-mode notes-tasks-list<ret>'  -docstring 'tasks list'
-map global notes N ':notes-new-note<ret>'                    -docstring 'new note'
-map global notes n ':notes-open<ret>'                        -docstring 'open note'
+map global notes n ':notes-new-note<ret>'                    -docstring 'new note'
+map global notes N ':notes-open<ret>'                        -docstring 'open note'
 map global notes / ':notes-search<ret>'                      -docstring 'search in notes'
 map global notes S ':notes-sync<ret>'                        -docstring 'synchronize notes'
 map global notes t ':enter-user-mode notes-tasks<ret>'       -docstring 'tasks'
@@ -270,13 +318,17 @@ hook -group notes-tasks global WinCreate \*notes-tasks-list\* %{
 hook -group notes-tasks global WinCreate .*\.md %{
   add-highlighter window/ ref notes-tasks
 
-  map window notes-tasks d ":notes-task-switch-status %opt{notes_sym_done}<ret>"     -docstring 'switch task to done'
-  map window notes-tasks h ":notes-task-switch-status %opt{notes_sym_hold}<ret>"     -docstring 'switch task to hold'
-  map window notes-tasks i ":notes-task-switch-status %opt{notes_sym_idea}<ret>"     -docstring 'switch task to idea'
-  map window notes-tasks n ":notes-task-switch-status %opt{notes_sym_wontdo}<ret>"   -docstring 'switch task to wontdo'
-  map window notes-tasks q ":notes-task-switch-status %opt{notes_sym_question}<ret>" -docstring 'switch task to question'
-  map window notes-tasks <ret> ":notes-task-gh-open-issue<ret>"                      -docstring 'open GitHub issue'
-  map window notes-tasks r ":notes-task-switch-status %opt{notes_sym_review}<ret>"   -docstring 'switch task to review'
-  map window notes-tasks t ":notes-task-switch-status %opt{notes_sym_todo}<ret>"     -docstring 'switch task to todo'
-  map window notes-tasks w ":notes-task-switch-status %opt{notes_sym_wip}<ret>"      -docstring 'switch task to wip'
+  map window notes-tasks d  ":notes-task-switch-status %opt{notes_sym_done}<ret>"     -docstring 'switch task to done'
+  map window notes-tasks h  ":notes-task-switch-status %opt{notes_sym_hold}<ret>"     -docstring 'switch task to hold'
+  map window notes-tasks i  ":notes-task-switch-status %opt{notes_sym_idea}<ret>"     -docstring 'switch task to idea'
+  map window notes-tasks n  ":notes-task-switch-status %opt{notes_sym_wontdo}<ret>"   -docstring 'switch task to wontdo'
+  map window notes-tasks q  ":notes-task-switch-status %opt{notes_sym_question}<ret>" -docstring 'switch task to question'
+  map window notes-tasks r  ":notes-task-switch-status %opt{notes_sym_review}<ret>"   -docstring 'switch task to review'
+  map window notes-tasks t  ":notes-task-switch-status %opt{notes_sym_todo}<ret>"     -docstring 'switch task to todo'
+  map window notes-tasks w  ":notes-task-switch-status %opt{notes_sym_wip}<ret>"      -docstring 'switch task to wip'
+
+  map window notes-tasks o             ':enter-user-mode notes-open-link<ret>' -docstring 'open link'
+  map window notes-open-link '\'       ':notes-link-tmux-horizontal<ret>'      -docstring 'horizontal split'
+  map window notes-open-link '<minus>' ':notes-link-tmux-vertical<ret>'        -docstring 'vertical split'
+  map window notes-open-link c         ':notes-link-tmux-window<ret>'          -docstring 'new window'
 }

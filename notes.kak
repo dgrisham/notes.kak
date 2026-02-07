@@ -151,12 +151,19 @@ define-command notes-open-capture -docstring 'open capture' %{
 # define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
 #   execute-keys -draft "<a-i>p<a-;>jwc%arg{1}"
 # }
+# define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
+#   # NOTE: this doesn't work if the `<status>:` is the first line in the file.
+#   # But when you search, it finds the first result starting *after* the current position
+#   # of the cursor, which is why I use the `k` to move above the top of the selected paragraph
+#   # before searcing for the status.
+#   execute-keys -draft "<a-i>p<a-;>k/^[A-Z]+:<ret>c%arg{1}"
+# }
 define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
-  # NOTE: this doesn't work if the `<status>:` is the first line in the file.
-  # But when you search, it finds the first result starting *after* the current position
-  # of the cursor, which is why I use the `k` to move above the top of the selected paragraph
-  # before searcing for the status.
-  execute-keys -draft "<a-i>p<a-;>k/^[A-Z]+:<ret>c%arg{1}"
+  # This one changes the first instance of the regex it finds - so it could misfire,
+  # but I think should mostly be okay. The advantage is that a 'note' can have linebreaks
+  # in it, which is nice for treating the NOTE: line itself as a header/title with content
+  # below it.
+  execute-keys -draft "/^[A-Z]+(?=:)<ret><a-n>c%arg{1}"
 }
 
 # View links

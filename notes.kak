@@ -148,8 +148,15 @@ define-command notes-open-capture -docstring 'open capture' %{
 # define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
 #   execute-keys -draft "git:c%arg{1}"
 # }
+# define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
+#   execute-keys -draft "<a-i>p<a-;>jwc%arg{1}"
+# }
 define-command notes-task-switch-status -params 1 -docstring 'switch task' %{
-  execute-keys -draft "<a-i>p<a-;>jwc%arg{1}"
+  # NOTE: this doesn't work if the `<status>:` is the first line in the file.
+  # But when you search, it finds the first result starting *after* the current position
+  # of the cursor, which is why I use the `k` to move above the top of the selected paragraph
+  # before searcing for the status.
+  execute-keys -draft "<a-i>p<a-;>k/^[A-Z]+:<ret>c%arg{1}"
 }
 
 # View links
@@ -268,14 +275,14 @@ add-highlighter shared/notes-tasks-list group
 add-highlighter shared/notes-tasks-list/path regex "^((?:\w:)?[^:\n]+):(\d+):(\d+)?" 1:green 2:blue 3:blue
 add-highlighter shared/notes-tasks-list/current-line line %{%opt{notes_tasks_list_current_line}} default+b
 
-map global notes a ':notes-archive-note<ret>'                -docstring 'archive note'
-map global notes A ':notes-archive-open<ret>'                -docstring 'open archived note'
-map global notes b ':notes-branch-capture<ret>'              -docstring 'capture note for current git branch'
-map global notes B ':notes-branch-open<ret>'                 -docstring 'open notes for current git branch'
-map global notes c ':notes-capture<ret>'                     -docstring 'capture'
-map global notes C ':notes-open-capture<ret>'                -docstring 'open capture'
-map global notes J ':notes-journal-open<ret>'                -docstring 'open journal'
-map global notes j ':enter-user-mode notes-journal-nav<ret>' -docstring 'navigate journals'
+map global notes A ':notes-archive-note<ret>'                -docstring 'archive note'
+map global notes a ':notes-archive-open<ret>'                -docstring 'open archived note'
+map global notes B ':notes-branch-capture<ret>'              -docstring 'capture note for current git branch'
+map global notes b ':notes-branch-open<ret>'                 -docstring 'open notes for current git branch'
+map global notes C ':notes-capture<ret>'                     -docstring 'capture'
+map global notes c ':notes-open-capture<ret>'                -docstring 'open capture'
+map global notes j ':notes-journal-open<ret>'                -docstring 'open journal'
+map global notes J ':enter-user-mode notes-journal-nav<ret>' -docstring 'navigate journals'
 map global notes l ':enter-user-mode notes-tasks-list<ret>'  -docstring 'tasks list'
 map global notes n ':notes-new-note<ret>'                    -docstring 'new note'
 map global notes N ':notes-open<ret>'                        -docstring 'open note'

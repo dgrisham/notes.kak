@@ -20,6 +20,7 @@ declare-option str notes_sym_idea 'IDEA'
 declare-option str notes_sym_question 'QUESTION'
 declare-option str notes_sym_hold 'HOLD'
 declare-option str notes_sym_review 'REVIEW'
+declare-option str notes_sym_note 'NOTE'
 declare-option str notes_find 'fd -t file .md'
 declare-option -hidden str notes_tasks_list_current_line
 declare-option -hidden str notes_journal_now
@@ -255,6 +256,7 @@ add-highlighter shared/notes-tasks/idea regex "(%opt{notes_sym_idea})"         1
 add-highlighter shared/notes-tasks/question regex "(%opt{notes_sym_question})" 1:notes_question
 add-highlighter shared/notes-tasks/hold regex "(%opt{notes_sym_hold})"         1:notes_hold
 add-highlighter shared/notes-tasks/review regex "(%opt{notes_sym_review})"     1:notes_review
+add-highlighter shared/notes-tasks/note regex "(%opt{notes_sym_note})"         1:notes_note
 add-highlighter shared/notes-tasks/issue regex " (#[0-9]+)"                    1:notes_issue
 add-highlighter shared/notes-tasks/subtask-uncheck regex "-\s* (\[ \])[^\n]*"  1:notes_subtask_uncheck
 add-highlighter shared/notes-tasks/subtask-check regex "-\s* (\[x\])\s*([^\n]*)"\
@@ -303,9 +305,10 @@ map global notes-tasks-list d ":notes-tasks-list-by-regex %opt{notes_sym_done}<r
 map global notes-tasks-list h ":notes-tasks-list-by-regex %opt{notes_sym_hold}<ret>"     -docstring 'list hold tasks'
 map global notes-tasks-list i ":notes-tasks-list-by-regex %opt{notes_sym_idea}<ret>"     -docstring 'list ideas'
 map global notes-tasks-list l ":notes-tasks-list-by-regex '\ :[^:]+:'<ret>"              -docstring 'list tasks by labels'
-map global notes-tasks-list n ":notes-tasks-list-by-regex %opt{notes_sym_wontdo}<ret>"   -docstring 'list wontdo tasks'
+map global notes-tasks-list o ":notes-tasks-list-by-regex %opt{notes_sym_wontdo}<ret>"   -docstring 'list wontdo tasks'
 map global notes-tasks-list q ":notes-tasks-list-by-regex %opt{notes_sym_question}<ret>" -docstring 'list questions'
 map global notes-tasks-list r ":notes-tasks-list-by-regex %opt{notes_sym_review}<ret>"   -docstring 'list reviews'
+map global notes-tasks-list n ":notes-tasks-list-by-regex %opt{notes_sym_note}<ret>"     -docstring 'list notes'
 map global notes-tasks-list t ":notes-tasks-list-by-regex %opt{notes_sym_todo}<ret>"     -docstring 'list todo tasks'
 map global notes-tasks-list w ":notes-tasks-list-by-regex %opt{notes_sym_wip}<ret>"      -docstring 'list wip tasks'
 
@@ -321,9 +324,10 @@ hook -group notes-tasks global WinCreate .*\.md %{
   map window notes-tasks d  ":notes-task-switch-status %opt{notes_sym_done}<ret>"     -docstring 'switch task to done'
   map window notes-tasks h  ":notes-task-switch-status %opt{notes_sym_hold}<ret>"     -docstring 'switch task to hold'
   map window notes-tasks i  ":notes-task-switch-status %opt{notes_sym_idea}<ret>"     -docstring 'switch task to idea'
-  map window notes-tasks n  ":notes-task-switch-status %opt{notes_sym_wontdo}<ret>"   -docstring 'switch task to wontdo'
+  map window notes-tasks o  ":notes-task-switch-status %opt{notes_sym_wontdo}<ret>"   -docstring 'switch task to wontdo'
   map window notes-tasks q  ":notes-task-switch-status %opt{notes_sym_question}<ret>" -docstring 'switch task to question'
   map window notes-tasks r  ":notes-task-switch-status %opt{notes_sym_review}<ret>"   -docstring 'switch task to review'
+  map window notes-tasks n  ":notes-task-switch-status %opt{notes_sym_note}<ret>"     -docstring 'switch task to note'
   map window notes-tasks t  ":notes-task-switch-status %opt{notes_sym_todo}<ret>"     -docstring 'switch task to todo'
   map window notes-tasks w  ":notes-task-switch-status %opt{notes_sym_wip}<ret>"      -docstring 'switch task to wip'
 
